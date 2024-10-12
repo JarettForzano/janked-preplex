@@ -1,82 +1,83 @@
-import axios from "axios";
-import OpenAI from "openai";
+import axios from 'axios';
+import OpenAI from 'openai';
 
-const SERP_API_KEY = process.env.SERP_API_KEY;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const model = "gpt-4o-mini";
+const SERP_API_KEY = process.env.SERP_API_KEY; // Ensure this is set in your environment variables
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY; // Ensure this is set in your environment variables
+const model = 'gpt-4'; // Use 'gpt-4' or your preferred model
 
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 let allowedUrls = [];
 
 async function scrapeWebsite(url) {
-    console.log(`Scraping URL: ${url}`);
-    const params = { urls: [url] };
+  console.log(`Scraping URL: ${url}`);
+  const params = { urls: [url] };
 
-    try {
-        const response = await axios.post(`http://localhost:8000/api/scrape`, params, {
-            headers: { 'Content-Type': 'application/json' }
-        });
+  try {
+    const response = await axios.post(`http://localhost:8000/api/scrape`, params, {
+      headers: { 'Content-Type': 'application/json' },
+    });
 
-        const results = response.data.results.map(result => ({
-            url: result.url,
-            content: result.content
-        }));
+    const results = response.data.results.map((result) => ({
+      url: result.url,
+      content: result.content,
+    }));
 
-        return results[0]; // Return the first result for simplicity
-    } catch (error) {
-        console.error(`Error scraping links: ${error}`);
-        return { url, content: '' };
-    }
+    return results[0]; // Return the first result for simplicity
+  } catch (error) {
+    console.error(`Error scraping links: ${error}`);
+    return { url, content: '' };
+  }
 }
 
 async function serpSearch(query) {
-    console.log(`Performing SERP search for query: ${query}`);
-    const data = JSON.stringify({ "q": query });
+  console.log(`Performing SERP search for query: ${query}`);
+  const data = JSON.stringify({ q: query });
 
-    try {
-        const response = await axios.post('https://google.serper.dev/search', data, {
-            headers: {
-                'X-API-KEY': SERP_API_KEY,
-                'Content-Type': 'application/json'
-            }
-        });
+  try {
+    const response = await axios.post('https://google.serper.dev/search', data, {
+      headers: {
+        'X-API-KEY': SERP_API_KEY,
+        'Content-Type': 'application/json',
+      },
+    });
 
-        // Extract URLs and snippets from the response and update allowedUrls
-        allowedUrls = response.data.organic.map(result => result.link);
-        if (response.data.answerBox && response.data.answerBox.sourceLink) {
-            allowedUrls.push(response.data.answerBox.sourceLink);
-        }
-
-        // Format the results for the agent
-        const formattedResults = response.data.organic.map((result, index) => ({
-            index: index + 1,
-            title: result.title,
-            snippet: result.snippet,
-            link: result.link
-        }));
-
-        // Include the answerBox if present
-        if (response.data.answerBox) {
-            formattedResults.unshift({
-                index: 0,
-                title: response.data.answerBox.title || '',
-                snippet: response.data.answerBox.answer || response.data.answerBox.snippet || '',
-                link: response.data.answerBox.link || response.data.answerBox.source || ''
-            });
-        }
-
-        return {
-            query: query,
-            results: formattedResults
-        };
-    } catch (error) {
-        console.error(`Error searching the web: ${error.message}`);
-        return { query, results: [] };
+    // Extract URLs and snippets from the response and update allowedUrls
+    allowedUrls = response.data.organic.map((result) => result.link);
+    if (response.data.answerBox && response.data.answerBox.sourceLink) {
+      allowedUrls.push(response.data.answerBox.sourceLink);
     }
+
+    // Format the results for the agent
+    const formattedResults = response.data.organic.map((result, index) => ({
+      index: index + 1,
+      title: result.title,
+      snippet: result.snippet,
+      link: result.link,
+    }));
+
+    // Include the answerBox if present
+    if (response.data.answerBox) {
+      formattedResults.unshift({
+        index: 0,
+        title: response.data.answerBox.title || '',
+        snippet:
+          response.data.answerBox.answer || response.data.answerBox.snippet || '',
+        link: response.data.answerBox.link || response.data.answerBox.source || '',
+      });
+    }
+
+    return {
+      query: query,
+      results: formattedResults,
+    };
+  } catch (error) {
+    console.error(`Error searching the web: ${error.message}`);
+    return { query, results: [] };
+  }
 }
 
-// Define system messages and tools
+// Define the system prompt with Markdown formatting instructions
 const systemPrompt = `
 You are a world-class research assistant with access to the following tools:
 
@@ -86,157 +87,201 @@ You are a world-class research assistant with access to the following tools:
 **Instructions:**
 
 - Begin by analyzing the user's question to determine what information is needed.
+- **First, plan the steps you will take to answer the question and share this plan with the user, formatted in Markdown. Use bullet points or numbered lists for clarity. Do not include any function call details or implementation details in the plan.**
+- **Do not proceed to execute the steps until you have shared your plan.**
+- **Since you cannot receive user confirmation, proceed to execute the steps after sharing your plan.**
 - Use **serpSearch** to get initial information.
 - Carefully read through the provided results and snippets to see if any contain the answer.
 - If the answer is found in a snippet, you can provide the answer and cite the source.
 - If not, consider using **scrapeWebsite** on the most promising URLs for more details.
-- Use chain-of-thought reasoning internally to decide which tool to use next.
-- **When sharing your thoughts with the user, keep them concise (maximum 2 sentences) and do not include the 'Thought:' prefix.**
+- **When providing the final answer, format it in Markdown. Include the sources as a list of clickable links.**
 - **Do not include any function names, function calls, or implementation details in your messages to the user.**
-- **When you need to use a tool, make a function call, but do not mention it to the user.**
-- **When you have the final answer, present it clearly and include a "Sources" section with the URLs.**
 
 **Example Interaction:**
 
 User: "How many employees does Apple have?"
 
 Assistant:
-- "I need to find the most recent number of Apple's employees."
-- "Apple has approximately 147,000 full-time employees as of 2023.
 
-Sources:
+\`\`\`markdown
+To answer your question, I will:
+
+1. Perform a web search to find the most recent number of Apple's employees.
+2. Verify the information from reliable and official sources.
+
+Let me proceed to find the answer for you.
+\`\`\`
+
+[Assistant then executes the steps internally.]
+
+Assistant:
+
+\`\`\`markdown
+Apple has approximately **147,000** full-time employees as of 2023.
+
+**Sources:**
+
 - [Apple Investor Relations](https://investor.apple.com/)
-"
+- [Wikipedia - Apple Inc.](https://en.wikipedia.org/wiki/Apple_Inc/)
+\`\`\`
 `;
 
 export default async function runResearchAssistant(query, ws) {
-    const messages = [
-        {
-            "role": "system",
-            "content": systemPrompt
-        },
-        {
-            "role": "user",
-            "content": query
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: query },
+  ];
+
+  try {
+    // Stream the assistant's plan
+    const planningResponse = await openai.chat.completions.create(
+      {
+        model: model,
+        messages: messages,
+        temperature: 0.7,
+        max_tokens: 500,
+        stream: true,
+      },
+      { responseType: 'stream' }
+    );
+
+    let planContent = '';
+
+    for await (const part of planningResponse) {
+      const { choices } = part;
+      if (choices && choices.length > 0) {
+        const delta = choices[0].delta;
+        if (delta && delta.content) {
+          planContent += delta.content;
+          ws.send(JSON.stringify({ type: 'plan_part', content: delta.content }));
         }
-    ];
+      }
+    }
 
-    try {
-        while (true) {
-            const response = await openai.chat.completions.create({
-                model: model,
-                messages: messages,
-                functions: [
-                    {
-                        name: "serpSearch",
-                        description: "Search the web for information",
-                        parameters: {
-                            type: "object",
-                            properties: {
-                                query: {
-                                    type: "string",
-                                    description: "The search query"
-                                }
-                            },
-                            required: ["query"]
-                        }
-                    },
-                    {
-                        name: "scrapeWebsite",
-                        description: "Scrape content from a website",
-                        parameters: {
-                            type: "object",
-                            properties: {
-                                url: {
-                                    type: "string",
-                                    description: "The URL to scrape"
-                                }
-                            },
-                            required: ["url"]
-                        }
-                    }
-                ],
-                function_call: "auto",
-                temperature: 0.7, // Adjust as needed
-                max_tokens: 500    // Adjust as needed
-            });
+    // Add the assistant's plan to the messages
+    messages.push({ role: 'assistant', content: planContent });
 
-            const responseMessage = response.choices[0].message;
-            let content = responseMessage.content || "";
-            const functionCall = responseMessage.function_call;
+    // Proceed to execute the steps internally
+    let assistantHasFinished = false;
 
-            // Remove 'Thought:' prefix if present
-            content = content.replace(/^Thought:\s*/i, '').trim();
+    while (!assistantHasFinished) {
+      const response = await openai.chat.completions.create({
+        model: model,
+        messages: messages,
+        functions: [
+          {
+            name: 'serpSearch',
+            description: 'Search the web for information',
+            parameters: {
+              type: 'object',
+              properties: {
+                query: {
+                  type: 'string',
+                  description: 'The search query',
+                },
+              },
+              required: ['query'],
+            },
+          },
+          {
+            name: 'scrapeWebsite',
+            description: 'Scrape content from a website',
+            parameters: {
+              type: 'object',
+              properties: {
+                url: {
+                  type: 'string',
+                  description: 'The URL to scrape',
+                },
+              },
+              required: ['url'],
+            },
+          },
+        ],
+        function_call: 'auto',
+        temperature: 0.7,
+        max_tokens: 500,
+      });
 
-            // Truncate content to first 2 sentences
-            content = content.split('. ').slice(0, 2).join('. ').trim();
+      const responseMessage = response.choices[0].message;
+      const functionCall = responseMessage.function_call;
 
-            // Remove any function call details from content
-            content = content.replace(/functions?\.\w+\(.*\)/g, '').trim();
+      if (functionCall) {
+        const functionName = functionCall.name;
+        const functionArgs = JSON.parse(functionCall.arguments);
 
-            if (functionCall) {
-                const functionName = functionCall.name;
-                const functionArgs = JSON.parse(functionCall.arguments);
+        let toolResponse;
+        if (functionName === 'serpSearch') {
+          toolResponse = await serpSearch(functionArgs.query);
+        } else if (functionName === 'scrapeWebsite') {
+          if (allowedUrls.includes(functionArgs.url)) {
+            toolResponse = await scrapeWebsite(functionArgs.url);
+          } else {
+            toolResponse = { content: '', error: `Access denied to URL: ${functionArgs.url}` };
+          }
+        }
 
-                let toolResponse;
-                if (functionName === "serpSearch") {
-                    toolResponse = await serpSearch(functionArgs.query);
-                } else if (functionName === "scrapeWebsite") {
-                    if (allowedUrls.includes(functionArgs.url)) {
-                        toolResponse = await scrapeWebsite(functionArgs.url);
-                    } else {
-                        toolResponse = { content: '', error: `Access denied to URL: ${functionArgs.url}` };
-                    }
-                } else {
-                    toolResponse = { error: `Unknown tool: ${functionName}` };
-                }
-
-                // Format the tool response
-                let toolResponseContent = '';
-                if (functionName === "serpSearch") {
-                    toolResponseContent = toolResponse.results.map(result => {
-                        return `Result ${result.index}:
+        // Prepare the observation
+        let observation = '';
+        if (functionName === 'serpSearch') {
+          observation = toolResponse.results.map((result) => {
+            return `Result ${result.index}:
 Title: ${result.title}
 Snippet: ${result.snippet}
 Link: ${result.link}`;
-                    }).join('\n\n');
-                } else if (functionName === "scrapeWebsite") {
-                    if (toolResponse.content) {
-                        toolResponseContent = `Content from ${functionArgs.url}:\n${toolResponse.content}`;
-                    } else {
-                        toolResponseContent = `Failed to scrape ${functionArgs.url}`;
-                    }
-                }
-
-                // Send the assistant's thought process to the frontend if it's not empty
-                if (content !== '') {
-                    ws.send(JSON.stringify({ type: 'assistant', content }));
-                }
-
-                // Add the assistant's response and tool's observation to messages
-                messages.push({
-                    "role": "assistant",
-                    "content": content,
-                    "function_call": functionCall
-                });
-
-                messages.push({
-                    "role": "function",
-                    "name": functionName,
-                    "content": toolResponseContent
-                });
-
-            } else {
-                // Send the final answer to the frontend
-                ws.send(JSON.stringify({ type: 'answer', content: content.trim() }));
-                ws.send(JSON.stringify({ type: 'end' }));
-                ws.close();
-                break;
-            }
+          }).join('\n\n');
+        } else if (functionName === 'scrapeWebsite') {
+          observation = toolResponse.content || `Failed to scrape ${functionArgs.url}`;
         }
-    } catch (error) {
-        console.error('An error occurred:', error.message);
-        ws.send(JSON.stringify({ type: 'error', content: error.message }));
+
+        // Add the assistant's message and function call to the messages
+        messages.push({
+          role: 'assistant',
+          content: responseMessage.content || '',
+          function_call: functionCall,
+        });
+
+        // Add the observation to the messages
+        messages.push({
+          role: 'function',
+          name: functionName,
+          content: observation,
+        });
+      } else {
+        // Assistant provides the final answer
+        messages.push({ role: 'assistant', content: responseMessage.content || '' });
+
+        // Stream the final answer
+        const finalAnswerResponse = await openai.chat.completions.create(
+          {
+            model: model,
+            messages: messages,
+            temperature: 0.7,
+            max_tokens: 500,
+            stream: true,
+          },
+          { responseType: 'stream' }
+        );
+
+        for await (const part of finalAnswerResponse) {
+          const { choices } = part;
+          if (choices && choices.length > 0) {
+            const delta = choices[0].delta;
+            if (delta && delta.content) {
+              ws.send(JSON.stringify({ type: 'answer_part', content: delta.content }));
+            }
+          }
+        }
+
+        ws.send(JSON.stringify({ type: 'end' }));
         ws.close();
+
+        assistantHasFinished = true;
+      }
     }
+  } catch (error) {
+    console.error('An error occurred:', error);
+    ws.send(JSON.stringify({ type: 'error', content: error.message }));
+    ws.close();
+  }
 }
