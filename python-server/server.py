@@ -1,7 +1,6 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, abort
 import asyncio
 import httpx
-from fastapi import HTTPException
 import time
 from api.httpx_scrape import fetch_content
 
@@ -18,7 +17,7 @@ async def scrape_urls():
     urls = data.get('urls')
 
     if not urls:
-        raise HTTPException(status_code=400, detail='No URLs provided')
+        abort(400, description='No URLs provided')
 
     start_time = time.time()
     semaphore = asyncio.Semaphore(10)
