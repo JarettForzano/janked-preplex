@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import SearchEngine from './components/search';
-import Display from './components/display';
+import Display from './components/display.tsx';
 
 function App() {
   return (
