@@ -28,6 +28,7 @@ export default function Display() {
     // Push new query and answer to the state
     setAnswers(prev => [...prev, { query: displayedQuery, answer: response }]);
 
+    // eslint-disable-next-line
     for (let char of response) {
       await new Promise(resolve => setTimeout(resolve, 50))
     }
@@ -38,7 +39,7 @@ export default function Display() {
       <div className="flex-1 flex flex-col mr-6">
         <div className="bg-gray-800 rounded-lg p-6 mb-6 flex-grow">
           <h2 className="text-2xl font-bold mb-4">Answers</h2>
-          <div className="bg-gray-700 rounded-lg p-4 h-64 overflow-auto">
+          <div className="bg-gray-700 rounded-lg p-4 flex-grow overflow-y-auto h-96">
             {answers.map((item, index) => (
               <div key={index}>
                 <div className="font-bold">{item.query}</div>
