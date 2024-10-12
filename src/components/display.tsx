@@ -4,11 +4,11 @@ import { useParams } from 'react-router-dom';
 
 export default function Display() {
   const { query } = useParams();
-  const [answers, setAnswers] = useState([])
-  const [steps, setSteps] = useState([])
+  const [answers, setAnswers] = useState<{ query: string | undefined; answer: string }[]>([]);
+  const [steps, setSteps] = useState<string[]>([]);
   const [displayedQuery, setDisplayedQuery] = useState(query)
 
-  const handleSearch = async (e) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     setSteps([])
     
