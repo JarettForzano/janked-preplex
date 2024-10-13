@@ -1,9 +1,9 @@
 import axios from 'axios';
 import OpenAI from 'openai';
 
-const SERP_API_KEY = process.env.SERP_API_KEY; // Ensure this is set in your environment variables
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY; // Ensure this is set in your environment variables
-const model = 'gpt-4'; // Use 'gpt-4' or your preferred model
+const SERP_API_KEY = process.env.SERP_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const model = 'gpt-4';
 
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
@@ -21,7 +21,7 @@ async function scrapeWebsite(url) {
       content: result.content,
     }));
 
-    return results[0]; // Return the first result for simplicity
+    return results[0];
   } catch (error) {
     console.error(`Error scraping links: ${error}`);
     return { url, content: '' };
@@ -40,7 +40,6 @@ async function serpSearch(query) {
       },
     });
 
-    // Format the results for the agent
     const formattedResults = response.data.organic.map((result, index) => ({
       index: index + 1,
       title: result.title,
@@ -48,7 +47,6 @@ async function serpSearch(query) {
       link: result.link,
     }));
 
-    // Include the answerBox if present
     if (response.data.answerBox) {
       formattedResults.unshift({
         index: 0,
@@ -69,7 +67,6 @@ async function serpSearch(query) {
   }
 }
 
-// Define the system prompt with Markdown formatting instructions
 const systemPrompt = `
 You are a world-class research assistant with access to the following tools:
 
@@ -125,37 +122,6 @@ export default async function runResearchAssistant(query, ws) {
   ];
 
   try {
-    // Stream the assistant's plan
-    const planningResponse = await openai.chat.completions.create(
-      {
-        model: model,
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 500,
-        stream: true,
-      },
-      { responseType: 'stream' }
-    );
-
-    let planContent = '';
-
-    for await (const part of planningResponse) {
-      const { choices } = part;
-      if (choices && choices.length > 0) {
-        const delta = choices[0].delta;
-        if (delta && delta.content) {
-          planContent += delta.content;
-          for (const char of delta.content) {
-            ws.send(JSON.stringify({ type: 'plan_part', content: char }));
-          }
-        }
-      }
-    }
-
-    // Add the assistant's plan to the messages
-    messages.push({ role: 'assistant', content: planContent });
-
-    // Proceed to execute the steps internally
     let assistantHasFinished = false;
 
     while (!assistantHasFinished) {
@@ -195,82 +161,45 @@ export default async function runResearchAssistant(query, ws) {
         function_call: 'auto',
         temperature: 0.7,
         max_tokens: 1024,
+        // Disable streaming for now
+        stream: false,
       });
 
-      const responseMessage = response.choices[0].message;
-      const functionCall = responseMessage.function_call;
+      const message = response.choices[0].message;
+      messages.push(message);
 
-      if (functionCall) {
-        const functionName = functionCall.name;
-        const functionArgs = JSON.parse(functionCall.arguments);
+      if (message.content) {
+        // Send the assistant's message to the user
+        ws.send(JSON.stringify({ type: 'assistant', content: message.content }));
+      }
 
-        let toolResponse;
+      if (message.function_call) {
+        const functionName = message.function_call.name;
+        const functionArgs = JSON.parse(message.function_call.arguments);
+
+        let functionResponse;
+
         if (functionName === 'serpSearch') {
-          toolResponse = await serpSearch(functionArgs.query);
+          functionResponse = await serpSearch(functionArgs.query);
         } else if (functionName === 'scrapeWebsite') {
-          toolResponse = await scrapeWebsite(functionArgs.url);
+          functionResponse = await scrapeWebsite(functionArgs.url);
+        } else {
+          functionResponse = { error: 'Unknown function' };
         }
 
-        // Prepare the observation
-        let observation = '';
-        if (functionName === 'serpSearch') {
-          observation = toolResponse.results.map((result) => {
-            return `Result ${result.index}:
-Title: ${result.title}
-Snippet: ${result.snippet}
-Link: ${result.link}`;
-          }).join('\n\n');
-        } else if (functionName === 'scrapeWebsite') {
-          observation = toolResponse.content || `Failed to scrape ${functionArgs.url}`;
-        }
-
-        // Add the assistant's message and function call to the messages
-        messages.push({
-          role: 'assistant',
-          content: responseMessage.content || '',
-          function_call: functionCall,
-        });
-
-        // Add the observation to the messages
+        // Append the function response to the messages
         messages.push({
           role: 'function',
           name: functionName,
-          content: observation,
+          content: JSON.stringify(functionResponse),
         });
       } else {
-        // Assistant provides the final answer
-        messages.push({ role: 'assistant', content: responseMessage.content || '' });
-
-        // Stream the final answer
-        const finalAnswerResponse = await openai.chat.completions.create(
-          {
-            model: model,
-            messages: messages,
-            temperature: 0.7,
-            max_tokens: 500,
-            stream: true,
-          },
-          { responseType: 'stream' }
-        );
-
-        for await (const part of finalAnswerResponse) {
-          const { choices } = part;
-          if (choices && choices.length > 0) {
-            const delta = choices[0].delta;
-            if (delta && delta.content) {
-              for (const char of delta.content) {
-                ws.send(JSON.stringify({ type: 'answer_part', content: char }));
-              }
-            }
-          }
-        }
-
-        ws.send(JSON.stringify({ type: 'end' }));
-        ws.close();
-
         assistantHasFinished = true;
       }
     }
+
+    ws.send(JSON.stringify({ type: 'end' }));
+    ws.close();
   } catch (error) {
     console.error('An error occurred:', error);
     ws.send(JSON.stringify({ type: 'error', content: error.message }));
