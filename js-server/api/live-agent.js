@@ -3,7 +3,7 @@ import OpenAI from 'openai';
 
 const SERP_API_KEY = process.env.SERP_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const model = 'gpt-4';
+const model = 'gpt-4o';
 
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
@@ -194,8 +194,9 @@ export default async function runResearchAssistant(query, ws) {
         const functionArgs = JSON.parse(message.function_call.arguments);
 
         let functionResponse;
-
+        console.log('Function is about to be called:', functionName);
         if (functionName === 'serpSearch') {
+          console.log('Calling serpSearch');
           functionResponse = await serpSearch(functionArgs.query);
         } else if (functionName === 'scrapeWebsite') {
           functionResponse = await scrapeWebsite(functionArgs.url);
@@ -214,6 +215,7 @@ export default async function runResearchAssistant(query, ws) {
       }
     }
 
+    console.log('Assistant has finished');
     ws.send(JSON.stringify({ type: 'end' }));
     ws.close();
   } catch (error) {
