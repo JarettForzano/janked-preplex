@@ -134,14 +134,13 @@ Apple has approximately **147,000** full-time employees as of 2023.
 \`\`\`
 `;
 
-let messages = [{ role: 'system', content: systemPrompt }];
-
 export default async function runResearchAssistant(query, ws) {
+  const messages = [{ role: 'system', content: systemPrompt }];
   messages.push({ role: 'user', content: query });
 
   try {
     let assistantHasFinished = false;
-
+   
     while (!assistantHasFinished) {
       const response = await openai.chat.completions.create({
         model: model,
