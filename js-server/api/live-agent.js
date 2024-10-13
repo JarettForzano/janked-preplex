@@ -7,8 +7,6 @@ const model = 'gpt-4'; // Use 'gpt-4' or your preferred model
 
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
-let allowedUrls = [];
-
 async function scrapeWebsite(url) {
   console.log(`Scraping URL: ${url}`);
   const params = { urls: [url] };
@@ -41,12 +39,6 @@ async function serpSearch(query) {
         'Content-Type': 'application/json',
       },
     });
-
-    // Extract URLs and snippets from the response and update allowedUrls
-    allowedUrls = response.data.organic.map((result) => result.link);
-    if (response.data.answerBox && response.data.answerBox.sourceLink) {
-      allowedUrls.push(response.data.answerBox.sourceLink);
-    }
 
     // Format the results for the agent
     const formattedResults = response.data.organic.map((result, index) => ({
@@ -202,7 +194,7 @@ export default async function runResearchAssistant(query, ws) {
         ],
         function_call: 'auto',
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: 1024,
       });
 
       const responseMessage = response.choices[0].message;
@@ -216,11 +208,7 @@ export default async function runResearchAssistant(query, ws) {
         if (functionName === 'serpSearch') {
           toolResponse = await serpSearch(functionArgs.query);
         } else if (functionName === 'scrapeWebsite') {
-          if (allowedUrls.includes(functionArgs.url)) {
-            toolResponse = await scrapeWebsite(functionArgs.url);
-          } else {
-            toolResponse = { content: '', error: `Access denied to URL: ${functionArgs.url}` };
-          }
+          toolResponse = await scrapeWebsite(functionArgs.url);
         }
 
         // Prepare the observation
