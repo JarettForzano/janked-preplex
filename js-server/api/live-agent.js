@@ -177,7 +177,7 @@ export default async function runResearchAssistant(query, ws) {
         ],
         function_call: 'auto',
         temperature: 0.7,
-        max_tokens: 1024,
+        max_tokens: 500,
         stream: false,
       });
 
@@ -214,8 +214,8 @@ export default async function runResearchAssistant(query, ws) {
       }
     }
 
-    // ws.send(JSON.stringify({ type: 'end' }));
-    // ws.close();
+    ws.send(JSON.stringify({ type: 'end' }));
+    ws.close();
   } catch (error) {
     console.error('An error occurred:', error);
     ws.send(JSON.stringify({ type: 'error', content: error.message }));
