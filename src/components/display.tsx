@@ -119,7 +119,7 @@ export default function Display() {
             query={displayedQuery}
             setQuery={setDisplayedQuery}
             onSubmit={handleSubmit}
-            disabled={isLoading} // Pass the isLoading state as a prop
+            disabled={isLoading}
           />
         </div>
       </div>

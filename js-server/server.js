@@ -5,8 +5,12 @@ import express from 'express';
 import { WebSocketServer } from 'ws';
 import http from 'http';
 import runResearchAssistant from './api/live-agent.js';
-
+import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
 const app = express();
+const upload = multer({ dest: 'uploads/' });
+
 const PORT = 4000;
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
@@ -40,6 +44,31 @@ wss.on('connection', (ws) => {
 });
 
 
+app.post('/upload', upload.single('file'), (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).send('No file uploaded.');
+    }
+
+    // Check if the file is a text file
+    if (path.extname(file.originalname) !== '.txt') {
+      return res.status(400).send('Only .txt files are allowed.');
+    }
+
+    // Read the file content
+    const fileContent = fs.readFileSync(file.path, 'utf-8');
+
+    // Clean up the uploaded file
+    fs.unlinkSync(file.path);
+
+    // Return the file content
+    res.json({ text: fileContent });
+  } catch (error) {
+    console.error('Error processing file upload:', error);
+    res.status(500).send('Internal server error.');
+  }
+});
 
 app.get('/', (req, res) => {
   res.send('Server is running!');
