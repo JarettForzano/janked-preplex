@@ -28,23 +28,22 @@
 
   .dark {
     /* Background Colors */
-    --background: #08080a;
-    --popover: #1c1c1c;
+    --background: #181C14;
     --input: #262626;
+    --background-secondary: #3C3D37;
 
     /* Text Colors */
     --foreground: #ffffff;
-    --popover-foreground: #19191c;
-    --primary-foreground: #19191c;
-    --secondary-foreground: #19191c;
-    --accent-foreground: #19191c;
-    --hover-foreground: #b30101;
+    --accent-foreground: #697565;
+    --hover-foreground: #ECDFCC;
+
     /* Border Colors */
-    --border: #ffffff;
-    --ring-accent: #b30101;
+    --border: #697565;
+    --ring-accent: #697565;
+
     /* Other Colors */
-    --primary: #b30101;
-    --secondary: #262626;
+    --primary: #ECDFCC;
+    --secondary: #ECDFCC;
   }
 }
 

@@ -17,6 +17,7 @@ export default function Display() {
       setIsLoading(true)
       handleSearch(query)
     }
+    
     // Cleanup on unmount or query change
     return () => {
       if (ws.current) {
@@ -95,12 +96,13 @@ export default function Display() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-950 text-gray-200 p-6">
+    <div className="flex h-screen p-6 " style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}>
       <div className="flex-1 flex flex-col space-y-4 max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-red-500 mb-4">Search Results</h1>
+        <h1 className="text-3xl font-bold mb-4" style={{ color: 'var(--primary)' }}>Search Results</h1>
         <div
           ref={containerRef}
-          className="bg-gray-900 rounded-lg p-4 flex-grow overflow-y-auto h-64"
+          className="rounded-lg p-4 flex-grow overflow-y-auto h-64"
+          style={{ backgroundColor: 'var(--background-secondary)'}}
         >
           {chat.map((item, index) => (
             <div key={index}>
@@ -109,22 +111,27 @@ export default function Display() {
                   {item.content}
                 </ReactMarkdown>
               ) : (
-                <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
-                  {item.content}
-                </h4>
+                <>
+                  {index > 0 && ( // Show line only if it's not the first question
+                    <div className="py-2"> {/* Added padding */}
+                      <hr className="my-2" style={{ borderColor: 'var(--border)' }} />
+                    </div>
+                  )}
+                  <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
+                    {item.content}
+                  </h4>
+                </>
               )}
-              <hr className="my-2 border-red-700" />
             </div>
           ))}
         </div>
         {isLoading && (
           <div className="flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-red-500" />
+            <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--primary)' }} />
           </div>
         )}
-        <div className="sticky bottom-0 bg-gray-950">
+        <div className="sticky bottom-0">
           <InputForm
-            query={displayedQuery}
             setQuery={setDisplayedQuery}
             onSubmit={handleSubmit}
             disabled={isLoading}
