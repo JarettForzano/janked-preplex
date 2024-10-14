@@ -38,22 +38,22 @@ export default function DarkSearchEngine() {
     { icon: <Scale className="w-5 h-5 text-blue-400" />, text: 'City with the most bike lanes' },
     { icon: <Coffee className="w-5 h-5 text-yellow-400" />, text: 'Healthiest cooking oils' },
   ]
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 text-gray-200 p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--background)' }}>
       <div className="w-full max-w-2xl space-y-4">
-        <h1 className="text-4xl md:text-5xl font-bold text-center mb-8 text-red-500">What do you want to know?</h1>
-        
-        {/* Add ModeToggle here */}
+        <h1 className="text-4xl md:text-5xl font-bold text-center mb-8" style={{ color: 'var(--primary)' }}>
+          What do you want to know?
+        </h1>
+
         <div className="flex justify-end mb-4">
           <ModeToggle />
         </div>
 
         {file && (
-          <div className="bg-gray-900 relative rounded-lg text-gray-300 p-3 mb-2 border border-red-500">
+          <div className="bg-surface rounded-lg text-foreground p-3 mb-2 border border-border">
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center bg-gray-800 text-gray-400 rounded-sm p-2">
-                <PlusCircle className="w-4 h-4" />
+              <div className="bg-surface-secondary p-2 rounded-sm">
+                <PlusCircle className="w-4 h-4 text-accent" />
               </div>
               <div className="flex-1">
                 <div className="font-medium">{file.name}</div>
@@ -61,10 +61,9 @@ export default function DarkSearchEngine() {
               </div>
               <button
                 onClick={handleRemoveFile}
-                className="bg-gray-800 text-gray-400 rounded-full p-1 hover:bg-gray-700 focus:bg-gray-700"
+                className="p-1 rounded-full hover:bg-hover focus:bg-hover"
               >
                 <X className="w-3 h-3" />
-                <span className="sr-only">Remove</span>
               </button>
             </div>
           </div>
@@ -77,14 +76,28 @@ export default function DarkSearchEngine() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && searchQuery.trim()) {
-                navigate(`/search/${encodeURIComponent(searchQuery.trim())}`)
+              if (e.key === "Enter" && searchQuery.trim()) {
+                navigate(`/search/${encodeURIComponent(searchQuery.trim())}`);
               }
             }}
-            className="w-full bg-gray-900 rounded-lg py-3 px-4 pr-12 text-lg focus:outline-none focus:ring-2 focus:ring-red-700 border border-red-900"
+            className="w-full rounded-lg py-3 px-4 pr-12 border border-border focus:outline-none focus:ring-2 focus:ring-accent"
+            style={{
+              backgroundColor: 'var(--input)',
+              color: 'var(--foreground)',
+              borderColor: 'var(--border)',
+              transition: 'border-color 0.3s, box-shadow 0.3s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'transparent';
+              e.currentTarget.style.boxShadow = '0 0 0 2px var(--ring-accent)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
           />
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <Search className="w-6 h-6 text-red-500" />
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+            <Search className="w-6 h-6 text-accent" />
           </div>
         </div>
 
@@ -95,15 +108,23 @@ export default function DarkSearchEngine() {
           className="hidden"
           ref={fileInputRef}
         />
-        
-        <div className="flex items-center justify-between text-sm text-gray-400">
+
+        <div className="flex items-center justify-between text-sm text-muted">
           <div className="flex items-center space-x-4">
-            <button className="flex items-center space-x-1 hover:text-red-400 transition-colors">
+            <button
+              className="flex items-center space-x-1 transition-colors"
+              style={{ color: 'var(--foreground)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--hover-foreground)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--foreground)')}
+            >
               <Search className="w-4 h-4" />
               <span>Focus</span>
             </button>
             <button
-              className="flex items-center space-x-1 hover:text-red-400 transition-colors"
+              className="flex items-center space-x-1 transition-colors"
+              style={{ color: 'var(--foreground)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--hover-foreground)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--foreground)')}
               onClick={handleAttachClick}
             >
               <PlusCircle className="w-4 h-4" />
@@ -112,20 +133,23 @@ export default function DarkSearchEngine() {
           </div>
           <div className="flex items-center space-x-2">
             <span>Pro</span>
-            <div className="w-10 h-6 bg-gray-800 rounded-full p-1 cursor-pointer">
-              <div className="w-4 h-4 bg-red-500 rounded-full transition-transform duration-200 transform translate-x-4"></div>
+            <div className="w-10 h-6 rounded-full p-1 cursor-pointer" style={{ backgroundColor: 'var(--secondary)', borderColor: 'var(--border)' }}>
+              <div className="w-4 h-4 rounded-full transition-transform duration-200 transform translate-x-4" style={{ backgroundColor: 'var(--primary)' }}></div>
             </div>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {suggestions.map((suggestion, index) => (
-            <button 
-              key={index} 
-              className="flex items-center space-x-3 bg-gray-900 rounded-lg p-4 hover:bg-gray-800 transition-colors border border-red-900 hover:border-red-700"
+            <button
+              key={index}
+              className="flex items-center space-x-3 rounded-lg p-4 hover:bg-hover transition-colors border border-border"
+              style={{ backgroundColor: 'var(--secondary)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--hover-foreground)')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--foreground)')}
               onClick={() => {
-                setSearchQuery(suggestion.text)
-                navigate(`/search/${encodeURIComponent(suggestion.text)}`)
+                setSearchQuery(suggestion.text);
+                navigate(`/search/${encodeURIComponent(suggestion.text)}`);
               }}
             >
               {suggestion.icon}
@@ -135,5 +159,5 @@ export default function DarkSearchEngine() {
         </div>
       </div>
     </div>
-  )
+  );
 }
