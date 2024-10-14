@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import InputForm from '../display-components/InputForm'
 import { Loader2 } from 'lucide-react'
+import remarkGfm from 'remark-gfm'
+import remarkBreaks from 'remark-breaks'
 
 export default function Display() {
   const { query } = useParams<{ query: string }>()
@@ -59,6 +61,7 @@ export default function Display() {
 
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data)
+      //console.log(data.content)
       if (data.type === 'assistant') {
         setChat((prev) => [
           ...prev,
@@ -107,17 +110,17 @@ export default function Display() {
           {chat.map((item, index) => (
             <div key={index}>
               {item.type === 'assistant' ? (
-                <ReactMarkdown className="leading-7 [&:not(:first-child)]:mt-6">
+                <ReactMarkdown className="markdown-container leading-7 [&:not(:first-child)]:mt-6" remarkPlugins={[remarkGfm, remarkBreaks]}>
                   {item.content}
                 </ReactMarkdown>
               ) : (
                 <>
                   {index > 0 && ( // Show line only if it's not the first question
-                    <div className="py-2"> {/* Added padding */}
+                    <div className="py-2">
                       <hr className="my-2" style={{ borderColor: 'var(--border)' }} />
                     </div>
                   )}
-                  <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
+                  <h4 className="scroll-m-20 text-xl font-semibold tracking-tight mb-4">
                     {item.content}
                   </h4>
                 </>
