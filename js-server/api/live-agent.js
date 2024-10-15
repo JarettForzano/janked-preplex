@@ -147,7 +147,7 @@ const messages = [{ role: 'system', content: systemPrompt }];
 export default async function runResearchAssistant(query, ws, fileText) {
   //const messages = [{ role: 'system', content: systemPrompt }];
   messages.push({ role: 'user', content: 
-    query + '\n\n' + 'USE THE INFORMATION BELOW AS CONTEXT WHEN ANSWERING THE QUERY IF IT EXISTS\n' + fileText  // quick and dirty way of doing it lol
+    query + '\n\n' + fileText  // quick and dirty way of doing it lol
   });
 
   try {

@@ -31,7 +31,9 @@
     --background: #181C14;
     --input: #262626;
     --background-secondary: #3C3D37;
-
+    --suggestion-background: #181C14;
+    --hover-background: #262626;
+    
     /* Text Colors */
     --foreground: #ffffff;
     --accent-foreground: #697565;
