@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useParams } from 'react-router-dom'
+import { useLocation, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import InputForm from '../display-components/InputForm'
 import { Loader2 } from 'lucide-react'
@@ -13,6 +13,9 @@ export default function Display() {
   const [isLoading, setIsLoading] = useState(false)
   const ws = useRef<WebSocket | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const location = useLocation();
+  const { receivedFileText } = location.state || {};
+  const [fileText, setFileText] = useState(receivedFileText || '')
 
   useEffect(() => {
     if (query) {
@@ -51,8 +54,9 @@ export default function Display() {
 
     ws.current.onopen = () => {
       console.log('WebSocket connection opened')
-      ws.current?.send(JSON.stringify({ query: searchQuery }))
+      ws.current?.send(JSON.stringify({ query: searchQuery, fileText: fileText }))
       setDisplayedQuery('');
+      setFileText('');
       setChat((prev) => [
         ...prev,
         { type: 'user', content: `${searchQuery}` }
