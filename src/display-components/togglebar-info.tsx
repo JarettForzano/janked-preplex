@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import Link from 'next/link'
+import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -21,7 +21,7 @@ export default function ChatToggleBar() {
   ]
 
   return (
-    <div className={`relative h-screen bg-background border-r transition-all duration-300 ${isExpanded ? 'w-64' : 'w-16'}`}>
+    <div className={`relative h-screen border-r transition-all duration-300 ${isExpanded ? 'w-64' : 'w-16'}`} style={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)', borderWidth: '1px', borderStyle: 'solid', color: 'var(--foreground)' }}>
       <Button
         variant="ghost"
         size="icon"
@@ -32,30 +32,58 @@ export default function ChatToggleBar() {
       </Button>
 
       <div className="p-4">
-        <Button variant="outline" className={`w-full justify-start ${!isExpanded && 'px-0 justify-center'}`}>
-          <MessageSquarePlus className="h-4 w-4 mr-2" />
+        <Button 
+          variant="outline" 
+          className={`w-full justify-start ${!isExpanded ? 'px-0 justify-center' : ''}`} 
+          style={{ 
+            backgroundColor: 'var(--background)', 
+            color: 'var(--foreground)', 
+            borderColor: isExpanded ? 'var(--border)' : 'transparent', // Conditional border color
+            borderWidth: isExpanded ? '1px' : '0px', // Conditional border width
+            borderStyle: isExpanded ? 'solid' : 'none' // Conditional border style
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--hover-background)'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--background)'}
+        >
+          <MessageSquare className="h-4 w-4 mr-2" />
           {isExpanded && "New Chat"}
         </Button>
       </div>
 
       <ScrollArea className="h-[calc(100vh-8rem)]">
         <div className="space-y-2 p-4">
-          {chats.map((chat) => (
-            <Button
-              key={chat.id}
-              variant="ghost"
-              className={`w-full justify-start ${!isExpanded && 'px-0 justify-center'}`}
-            >
-              <MessageSquare className="h-4 w-4 mr-2" />
-              {isExpanded && chat.name}
-            </Button>
-          ))}
+          {chats.map((chat, index) => {
+            const [isHovered, setIsHovered] = useState(false);
+            const kanjiNumbers = ['一', '二', '三', '四', '五']; // Add more as needed
+
+            return (
+              <Button
+                key={chat.id}
+                variant="ghost"
+                className={`w-full justify-start ${!isExpanded && 'px-0 justify-center'}`}
+                style={{
+                  backgroundColor: isHovered ? 'var(--hover-background)' : 'transparent',
+                }}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+              >
+                <span className="h-4 w-4 mr-2">{kanjiNumbers[index]}</span>
+                {isExpanded && chat.name}
+              </Button>
+            );
+          })}
         </div>
       </ScrollArea>
 
       <div className="absolute bottom-4 left-4 right-4">
-        <Link href="/profile">
-          <Button variant="ghost" className={`w-full justify-start ${!isExpanded && 'px-0 justify-center'}`}>
+        <Link to="/profile">
+          <Button 
+            variant="ghost" 
+            className={`w-full justify-start ${!isExpanded && 'px-0 justify-center'}`}
+            style={{ backgroundColor: 'var(--background)' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--hover-background)'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--background)'}
+          >
             <Avatar className="h-6 w-6 mr-2">
               <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
               <AvatarFallback>U</AvatarFallback>
