@@ -20,5 +20,5 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "js-server"]
+  "include": ["src", "js-serverver", "venv"]
 }
