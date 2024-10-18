@@ -4,11 +4,12 @@ import { useParams } from 'react-router-dom';
 
 export default function Display() {
   const { query } = useParams();
-  const [answer, setAnswer] = useState('')
+  const [answers, setAnswers] = useState([])
   const [steps, setSteps] = useState([])
+  const [displayedQuery, setDisplayedQuery] = useState(query)
 
-  const handleSearch = async () => {
-    setAnswer('')
+  const handleSearch = async (e) => {
+    e.preventDefault();
     setSteps([])
     
     const response = "This is a simulated answer to your query. It would normally be streamed from an API."
@@ -24,8 +25,10 @@ export default function Display() {
       await new Promise(resolve => setTimeout(resolve, 1000))
     }
 
+    // Push new query and answer to the state
+    setAnswers(prev => [...prev, { query: displayedQuery, answer: response }]);
+
     for (let char of response) {
-      setAnswer(prev => prev + char)
       await new Promise(resolve => setTimeout(resolve, 50))
     }
   }
@@ -34,20 +37,22 @@ export default function Display() {
     <div className="flex h-screen bg-gray-900 text-gray-100 p-6">
       <div className="flex-1 flex flex-col mr-6">
         <div className="bg-gray-800 rounded-lg p-6 mb-6 flex-grow">
-          <h2 className="text-2xl font-bold mb-4">Search Query</h2>
-          <div className="bg-gray-700 rounded-lg p-4 h-24 mb-4">
-            {query || "Your search query will appear here"}
-          </div>
-          <h2 className="text-2xl font-bold mb-4">Answer</h2>
+          <h2 className="text-2xl font-bold mb-4">Answers</h2>
           <div className="bg-gray-700 rounded-lg p-4 h-64 overflow-auto">
-            {answer || "The answer will be streamed here"}
+            {answers.map((item, index) => (
+              <div key={index}>
+                <div className="font-bold">{item.query}</div>
+                <div>{item.answer}</div>
+                <hr className="my-2" />
+              </div>
+            ))}
           </div>
         </div>
         <form onSubmit={handleSearch} className="flex">
           <input
             type="text"
-            value={query}
-            onChange={(e) => console.log(e.target.value)}
+            value={displayedQuery}
+            onChange={(e) => setDisplayedQuery(e.target.value)}
             placeholder="Type your query here..."
             className="flex-grow bg-gray-800 text-white rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
