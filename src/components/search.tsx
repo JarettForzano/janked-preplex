@@ -97,7 +97,7 @@ export default function DarkSearchEngine() {
             }}
           />
           <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-            <Search className="w-6 h-6 text-accent" />
+            <Search className="w-6 h-6" style={{ color: 'var(--primary)' }} />
           </div>
         </div>
 
@@ -133,8 +133,8 @@ export default function DarkSearchEngine() {
           </div>
           <div className="flex items-center space-x-2">
             <span>Pro</span>
-            <div className="w-10 h-6 rounded-full p-1 cursor-pointer" style={{ backgroundColor: 'var(--secondary)', borderColor: 'var(--border)' }}>
-              <div className="w-4 h-4 rounded-full transition-transform duration-200 transform translate-x-4" style={{ backgroundColor: 'var(--primary)' }}></div>
+            <div className="w-10 h-6 rounded-full p-1 cursor-pointer" style={{ backgroundColor: 'var(--background-secondary)', borderColor: 'var(--border)' }}>
+              <div className="w-4 h-4 rounded-full transition-transform duration-200 transform translate-x-4" style={{ backgroundColor: 'var(--accent-foreground)' }}></div>
             </div>
           </div>
         </div>
@@ -144,7 +144,7 @@ export default function DarkSearchEngine() {
             <button
               key={index}
               className="flex items-center space-x-3 rounded-lg p-4 hover:bg-hover transition-colors border border-border"
-              style={{ backgroundColor: 'var(--secondary)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
+              style={{ backgroundColor: 'var(--background-secondary)', borderColor: 'var(--border)', color: 'var(--foreground)' }}
               onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--hover-foreground)')}
               onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--foreground)')}
               onClick={() => {
