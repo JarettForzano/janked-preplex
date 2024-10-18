@@ -109,7 +109,7 @@ export default function Display() {
         <div
           ref={containerRef}
           className="rounded-lg p-4 flex-grow overflow-y-auto h-64"
-          style={{ backgroundColor: 'var(--background-secondary)'}}
+          style={{ backgroundColor: 'var(--background-secondary)', borderColor: 'var(--border)', borderWidth: '1px', borderStyle: 'solid' }}
         >
           {chat.map((item, index) => (
             <div key={index}>
