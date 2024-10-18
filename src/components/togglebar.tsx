@@ -1,17 +1,15 @@
-import React from 'react'
-import ChatToggleBar from '../display-components/togglebar-info'
+// src/components/Layout.tsx
+import React from 'react';
+import { Outlet } from 'react-router-dom';
+import ChatToggleBar from '../display-components/togglebar-info'; // Adjust the import path as necessary
 
-interface LayoutProps {
-  children: React.ReactNode
-}
-
-export default function Layout({ children }: { children: React.ReactNode }) {
+export default function Layout() {
   return (
     <div className="flex h-screen overflow-hidden">
       <ChatToggleBar />
       <main className="flex-1 overflow-auto">
-        {children}
+        <Outlet />
       </main>
     </div>
-  )
+  );
 }

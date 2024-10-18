@@ -158,9 +158,13 @@ export default function DarkSearchEngine() {
 
         <input type="file" accept=".txt" onChange={handleFileUpload} className="hidden" ref={fileInputRef} />
 
-        <div className="flex items-center justify-between text-sm text-muted">
+        <div className="flex items-center justify-between text-sm text-muted" style={{color: 'var(--foreground)'}}>
           <div className="flex items-center space-x-4">
-            <button className="flex items-center space-x-1" onClick={handleAttachClick}>
+            <button 
+              className="flex items-center space-x-1" 
+              onClick={handleAttachClick}
+              style={{ transition: 'color 0.3s' }} // Optional: smooth transition
+            >
               <PlusCircle className="w-4 h-4" />
               <span>Attach</span>
             </button>
