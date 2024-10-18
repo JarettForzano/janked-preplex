@@ -1,80 +1,80 @@
-import React, { useState } from 'react'
-import { Send } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import AnswerDisplay from '../display-components/AnswerDisplay';
+import StepsDisplay from '../display-components/StepsDisplay';
+import InputForm from '../display-components/InputForm';
 
 export default function Display() {
-  const { query } = useParams();
+  const { query } = useParams<{ query: string }>();
   const [answers, setAnswers] = useState<{ query: string | undefined; answer: string }[]>([]);
   const [steps, setSteps] = useState<string[]>([]);
-  const [displayedQuery, setDisplayedQuery] = useState(query)
+  const [displayedQuery, setDisplayedQuery] = useState('');
+  const ws = useRef<WebSocket | null>(null);
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setSteps([])
-    
-    const response = "This is a simulated answer to your query. It would normally be streamed from an API."
-    const simulatedSteps = [
-      "Analyzing query...",
-      "Searching database...",
-      "Processing results...",
-      "Generating response..."
-    ]
+    setSteps([]);
+    setAnswers([]);
 
-    for (let step of simulatedSteps) {
-      setSteps(prev => [...prev, step])
-      await new Promise(resolve => setTimeout(resolve, 1000))
+    // Close existing WebSocket if any
+    if (ws.current) {
+      ws.current.close();
     }
 
-    // Push new query and answer to the state
-    setAnswers(prev => [...prev, { query: displayedQuery, answer: response }]);
+    // Establish WebSocket connection
+    ws.current = new WebSocket('ws://localhost:4000');
 
-    // eslint-disable-next-line
-    for (let char of response) {
-      await new Promise(resolve => setTimeout(resolve, 50))
-    }
-  }
+    ws.current.onopen = () => {
+      console.log('WebSocket connection opened');
+      // Send the query to the server
+      console.log('sending query:', query);
+      ws.current?.send(JSON.stringify({ query: displayedQuery }));
+    };
+
+    ws.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log('Received data:', data);
+      if (data.type === 'assistant') {
+        // Append assistant's thought process to steps
+        setSteps((prev) => [...prev, data.content]);
+      } else if (data.type === 'answer') {
+        // Final answer
+        setAnswers((prev) => [...prev, { query: displayedQuery, answer: data.content }]);
+      } else if (data.type === 'end') {
+        // The assistant has finished
+        ws.current?.close();
+      } else if (data.type === 'error') {
+        // Handle errors
+        setSteps((prev) => [...prev, `Error: ${data.content}`]);
+        ws.current?.close();
+      }
+    };
+
+    ws.current.onclose = () => {
+      console.log('WebSocket connection closed');
+    };
+
+    ws.current.onerror = (error) => {
+      console.error('WebSocket error:', error);
+    };
+  };
+
+  useEffect(() => {
+    // Clean up WebSocket when component unmounts
+    return () => {
+      if (ws.current) {
+        ws.current.close();
+      }
+    };
+  }, []);
 
   return (
     <div className="flex h-screen bg-gray-900 text-gray-100 p-6">
       <div className="flex-1 flex flex-col mr-6">
-        <div className="bg-gray-800 rounded-lg p-6 mb-6 flex-grow">
-          <h2 className="text-2xl font-bold mb-4">Answers</h2>
-          <div className="bg-gray-700 rounded-lg p-4 flex-grow overflow-y-auto h-96">
-            {answers.map((item, index) => (
-              <div key={index}>
-                <div className="font-bold">{item.query}</div>
-                <div>{item.answer}</div>
-                <hr className="my-2" />
-              </div>
-            ))}
-          </div>
-        </div>
-        <form onSubmit={handleSearch} className="flex">
-          <input
-            type="text"
-            value={displayedQuery}
-            onChange={(e) => setDisplayedQuery(e.target.value)}
-            placeholder="Type your query here..."
-            className="flex-grow bg-gray-800 text-white rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-r-lg px-4 py-2 transition duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <Send className="w-5 h-5" />
-          </button>
-        </form>
+        <AnswerDisplay answers={answers} />
+        <InputForm query={displayedQuery} setQuery={setDisplayedQuery} onSubmit={handleSearch} />
       </div>
-      <div className="w-1/3 bg-gray-800 rounded-lg p-6">
-        <h2 className="text-2xl font-bold mb-4">Steps</h2>
-        <div className="space-y-2">
-          {steps.map((step, index) => (
-            <div key={index} className="bg-gray-700 rounded-lg p-2">
-              {step}
-            </div>
-          ))}
-        </div>
-      </div>
+      <StepsDisplay steps={steps} />
     </div>
-  )
+  );
 }

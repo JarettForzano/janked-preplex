@@ -1,5 +1,5 @@
-const axios = require("axios");
-const OpenAI = require("openai");
+import axios from "axios";
+import OpenAI from "openai";
 
 const SERP_API_KEY = process.env.SERP_API_KEY;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -90,20 +90,26 @@ You are a world-class research assistant with access to the following tools:
 - Carefully read through the provided results and snippets to see if any contain the answer.
 - If the answer is found in a snippet, you can provide the answer and cite the source.
 - If not, consider using **scrapeWebsite** on the most promising URLs for more details.
-- Use **chain-of-thought reasoning** to decide which tool to use next.
-- **Do not make up information.** Only provide answers based on the tool outputs.
-- When you have the answer, present it clearly and include a "Sources" section with the URLs.
+- Use chain-of-thought reasoning internally to decide which tool to use next.
+- **When sharing your thoughts with the user, keep them concise (maximum 2 sentences) and do not include the 'Thought:' prefix.**
+- **Do not include any function names, function calls, or implementation details in your messages to the user.**
+- **When you need to use a tool, make a function call, but do not mention it to the user.**
+- **When you have the final answer, present it clearly and include a "Sources" section with the URLs.**
 
-**Example Format:**
+**Example Interaction:**
 
-Thought: [Your reasoning here]
-Action: [The action you decide to take]
-Observation: [The result of the action]
-... (Repeat Thought, Action, Observation as needed)
-[Your final answer][URL 1](URL 1)[URL 2](URL 2)
+User: "How many employees does Apple have?"
+
+Assistant:
+- "I need to find the most recent number of Apple's employees."
+- "Apple has approximately 147,000 full-time employees as of 2023.
+
+Sources:
+- [Apple Investor Relations](https://investor.apple.com/)
+"
 `;
 
-async function runResearchAssistant(query) {
+export default async function runResearchAssistant(query, ws) {
     const messages = [
         {
             "role": "system",
@@ -150,12 +156,23 @@ async function runResearchAssistant(query) {
                         }
                     }
                 ],
-                function_call: "auto"
+                function_call: "auto",
+                temperature: 0.7, // Adjust as needed
+                max_tokens: 500    // Adjust as needed
             });
 
-            const responseMessage = response.choices[0].message; // Access the message object directly
-            const content = responseMessage.content || ""; // Extract content
-            const functionCall = responseMessage.function_call; // Extract function call
+            const responseMessage = response.choices[0].message;
+            let content = responseMessage.content || "";
+            const functionCall = responseMessage.function_call;
+
+            // Remove 'Thought:' prefix if present
+            content = content.replace(/^Thought:\s*/i, '').trim();
+
+            // Truncate content to first 2 sentences
+            content = content.split('. ').slice(0, 2).join('. ').trim();
+
+            // Remove any function call details from content
+            content = content.replace(/functions?\.\w+\(.*\)/g, '').trim();
 
             if (functionCall) {
                 const functionName = functionCall.name;
@@ -191,6 +208,11 @@ Link: ${result.link}`;
                     }
                 }
 
+                // Send the assistant's thought process to the frontend if it's not empty
+                if (content !== '') {
+                    ws.send(JSON.stringify({ type: 'assistant', content }));
+                }
+
                 // Add the assistant's response and tool's observation to messages
                 messages.push({
                     "role": "assistant",
@@ -205,26 +227,16 @@ Link: ${result.link}`;
                 });
 
             } else {
-                // Final answer
-                messages.push({
-                    "role": "assistant",
-                    "content": content
-                });
-
-                const answerMatch = content.match(/Answer:\s*(.*)/s);
-                if (answerMatch) {
-                    return answerMatch[1].trim();
-                } else {
-                    return content.trim();
-                }
+                // Send the final answer to the frontend
+                ws.send(JSON.stringify({ type: 'answer', content: content.trim() }));
+                ws.send(JSON.stringify({ type: 'end' }));
+                ws.close();
+                break;
             }
         }
     } catch (error) {
-        console.error("An error occurred:", error.response ? error.response.data : error.message);
-        throw error;
+        console.error('An error occurred:', error.message);
+        ws.send(JSON.stringify({ type: 'error', content: error.message }));
+        ws.close();
     }
 }
-
-module.exports = {
-    runResearchAssistant
-};
