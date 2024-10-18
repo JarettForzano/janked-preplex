@@ -134,12 +134,10 @@ Apple has approximately **147,000** full-time employees as of 2023.
 \`\`\`
 `;
 
+let messages = [{ role: 'system', content: systemPrompt }];
 
 export default async function runResearchAssistant(query, ws) {
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: query },
-  ];
+  messages.push({ role: 'user', content: query });
 
   try {
     let assistantHasFinished = false;
@@ -181,7 +179,6 @@ export default async function runResearchAssistant(query, ws) {
         function_call: 'auto',
         temperature: 0.7,
         max_tokens: 1024,
-        // Disable streaming for now
         stream: false,
       });
 
@@ -218,8 +215,8 @@ export default async function runResearchAssistant(query, ws) {
       }
     }
 
-    ws.send(JSON.stringify({ type: 'end' }));
-    ws.close();
+    // ws.send(JSON.stringify({ type: 'end' }));
+    // ws.close();
   } catch (error) {
     console.error('An error occurred:', error);
     ws.send(JSON.stringify({ type: 'error', content: error.message }));
