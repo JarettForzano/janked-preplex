@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react'
 import { Search, PlusCircle, Leaf, Calendar, Scale, Coffee, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { FileUpload } from '../api/fileUpload'
+import { ModeToggle } from './mode-toggle'
 
 export default function DarkSearchEngine() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -43,6 +44,11 @@ export default function DarkSearchEngine() {
       <div className="w-full max-w-2xl space-y-4">
         <h1 className="text-4xl md:text-5xl font-bold text-center mb-8 text-red-500">What do you want to know?</h1>
         
+        {/* Add ModeToggle here */}
+        <div className="flex justify-end mb-4">
+          <ModeToggle />
+        </div>
+
         {file && (
           <div className="bg-gray-900 relative rounded-lg text-gray-300 p-3 mb-2 border border-red-500">
             <div className="flex items-center gap-3">

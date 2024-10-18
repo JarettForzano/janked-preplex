@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react'
 
 export default function Display() {
   const { query } = useParams<{ query: string }>()
-  const [answers, setAnswers] = useState<{ type: 'assistant'; content: string }[]>([])
+  const [chat, setChat] = useState<{ type: 'assistant' | 'user'; content: string }[]>([])
   const [displayedQuery, setDisplayedQuery] = useState(query || '')
   const [isLoading, setIsLoading] = useState(false)
   const ws = useRef<WebSocket | null>(null)
@@ -30,7 +30,7 @@ export default function Display() {
     if (containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight
     }
-  }, [answers])
+  }, [chat])
 
   const handleSearch = (searchQuery: string) => {
     if (!searchQuery) {
@@ -50,16 +50,16 @@ export default function Display() {
       console.log('WebSocket connection opened')
       console.log('sending query:', searchQuery)
       ws.current?.send(JSON.stringify({ query: searchQuery }))
-      setAnswers((prev) => [
+      setChat((prev) => [
         ...prev,
-        { type: 'assistant', content: `**Question:** ${searchQuery}` }
+        { type: 'user', content: `${searchQuery}` }
       ])
     }
 
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data)
       if (data.type === 'assistant') {
-        setAnswers((prev) => [
+        setChat((prev) => [
           ...prev,
           { type: 'assistant', content: data.content },
         ])
@@ -102,9 +102,17 @@ export default function Display() {
           ref={containerRef}
           className="bg-gray-900 rounded-lg p-4 flex-grow overflow-y-auto h-64"
         >
-          {answers.map((item, index) => (
+          {chat.map((item, index) => (
             <div key={index}>
-              <ReactMarkdown className="text-base text-gray-200">{item.content}</ReactMarkdown>
+              {item.type === 'assistant' ? (
+                <ReactMarkdown className="leading-7 [&:not(:first-child)]:mt-6">
+                  {item.content}
+                </ReactMarkdown>
+              ) : (
+                <h4 className="scroll-m-20 text-xl font-semibold tracking-tight">
+                  {item.content}
+                </h4>
+              )}
               <hr className="my-2 border-red-700" />
             </div>
           ))}
