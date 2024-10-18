@@ -60,6 +60,10 @@ export default function DarkSearchEngine() {
             <button 
               key={index} 
               className="flex items-center space-x-3 bg-gray-900 rounded-lg p-4 hover:bg-gray-800 transition-colors border border-red-900 hover:border-red-700"
+              onClick={() => {
+                setSearchQuery(suggestion.text)
+                navigate(`/search/${encodeURIComponent(suggestion.text)}`)
+              }}
             >
               {suggestion.icon}
               <span>{suggestion.text}</span>

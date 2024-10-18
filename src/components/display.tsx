@@ -14,6 +14,7 @@ export default function Display() {
 
   useEffect(() => {
     if (query) {
+      setIsLoading(true)
       handleSearch(query)
     }
     // Cleanup on unmount or query change
@@ -103,7 +104,7 @@ export default function Display() {
         >
           {answers.map((item, index) => (
             <div key={index}>
-              <ReactMarkdown className="text-gray-200">{item.content}</ReactMarkdown>
+              <ReactMarkdown className="text-base text-gray-200">{item.content}</ReactMarkdown>
               <hr className="my-2 border-red-700" />
             </div>
           ))}
@@ -118,6 +119,7 @@ export default function Display() {
             query={displayedQuery}
             setQuery={setDisplayedQuery}
             onSubmit={handleSubmit}
+            disabled={isLoading} // Pass the isLoading state as a prop
           />
         </div>
       </div>
