@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import AnswerDisplay from '@/display-components/AnswerDisplay'
-import InputForm from '@/display-components/InputForm'
+import AnswerDisplay from '../display-components/AnswerDisplay'
+import InputForm from '../display-components/InputForm'
 import { Loader2 } from 'lucide-react'
 
 export default function Display() {
