@@ -1,10 +1,35 @@
-import React, { useState } from 'react'
-import { Search, PlusCircle, Leaf, Calendar, Scale, Coffee } from 'lucide-react'
+import React, { useState, useRef } from 'react'
+import { Search, PlusCircle, Leaf, Calendar, Scale, Coffee, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { FileUpload } from '../api/fileUpload'
 
 export default function DarkSearchEngine() {
   const [searchQuery, setSearchQuery] = useState('')
+  const [file, setFile] = useState<File | null>(null)
   const navigate = useNavigate()
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0]
+    if (selectedFile) {
+      setFile(selectedFile)
+      const response = await FileUpload(event)
+      console.log(response)
+    }
+  }
+
+  const handleAttachClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click()
+    }
+  }
+
+  const handleRemoveFile = () => {
+    setFile(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   const suggestions = [
     { icon: <Leaf className="w-5 h-5 text-green-400" />, text: 'Most common nutrient deficiency' },
@@ -15,10 +40,31 @@ export default function DarkSearchEngine() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-950 text-gray-200 p-4">
-      <div className="w-full max-w-2xl space-y-6">
+      <div className="w-full max-w-2xl space-y-4">
         <h1 className="text-4xl md:text-5xl font-bold text-center mb-8 text-red-500">What do you want to know?</h1>
         
-        <div className="relative">
+        {file && (
+          <div className="bg-gray-900 relative rounded-lg text-gray-300 p-3 mb-2 border border-red-500">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center bg-gray-800 text-gray-400 rounded-sm p-2">
+                <PlusCircle className="w-4 h-4" />
+              </div>
+              <div className="flex-1">
+                <div className="font-medium">{file.name}</div>
+                <div className="text-xs">{(file.size / 1024).toFixed(2)} kB</div>
+              </div>
+              <button
+                onClick={handleRemoveFile}
+                className="bg-gray-800 text-gray-400 rounded-full p-1 hover:bg-gray-700 focus:bg-gray-700"
+              >
+                <X className="w-3 h-3" />
+                <span className="sr-only">Remove</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="relative mb-4">
           <input
             type="text"
             placeholder="Search anything..."
@@ -35,6 +81,14 @@ export default function DarkSearchEngine() {
             <Search className="w-6 h-6 text-red-500" />
           </div>
         </div>
+
+        <input
+          type="file"
+          accept=".txt"
+          onChange={handleFileUpload}
+          className="hidden"
+          ref={fileInputRef}
+        />
         
         <div className="flex items-center justify-between text-sm text-gray-400">
           <div className="flex items-center space-x-4">
@@ -42,7 +96,10 @@ export default function DarkSearchEngine() {
               <Search className="w-4 h-4" />
               <span>Focus</span>
             </button>
-            <button className="flex items-center space-x-1 hover:text-red-400 transition-colors">
+            <button
+              className="flex items-center space-x-1 hover:text-red-400 transition-colors"
+              onClick={handleAttachClick}
+            >
               <PlusCircle className="w-4 h-4" />
               <span>Attach</span>
             </button>
