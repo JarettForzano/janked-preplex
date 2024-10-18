@@ -17,7 +17,7 @@ export default function Display() {
       setIsLoading(true)
       handleSearch(query)
     }
-    
+
     // Cleanup on unmount or query change
     return () => {
       if (ws.current) {
@@ -49,8 +49,8 @@ export default function Display() {
 
     ws.current.onopen = () => {
       console.log('WebSocket connection opened')
-      console.log('sending query:', searchQuery)
       ws.current?.send(JSON.stringify({ query: searchQuery }))
+      setDisplayedQuery('');
       setChat((prev) => [
         ...prev,
         { type: 'user', content: `${searchQuery}` }
@@ -135,6 +135,7 @@ export default function Display() {
             setQuery={setDisplayedQuery}
             onSubmit={handleSubmit}
             disabled={isLoading}
+            query={displayedQuery}
           />
         </div>
       </div>

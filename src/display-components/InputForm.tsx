@@ -5,13 +5,15 @@ interface InputFormProps {
   setQuery: (query: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   disabled: boolean;
+  query: string;
 }
 
-const InputForm: React.FC<InputFormProps> = ({ setQuery, onSubmit, disabled }) => {
+const InputForm: React.FC<InputFormProps> = ({ setQuery, onSubmit, disabled, query }) => {
   return (
     <form onSubmit={onSubmit} className="flex">
       <input  
         type="text"
+        value={query}
         placeholder="Ask a followup question..."
         onChange={(e) => setQuery(e.target.value)}
         disabled={disabled}
