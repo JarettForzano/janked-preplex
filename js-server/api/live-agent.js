@@ -153,7 +153,9 @@ export default async function runResearchAssistant(query, ws) {
         const delta = choices[0].delta;
         if (delta && delta.content) {
           planContent += delta.content;
-          ws.send(JSON.stringify({ type: 'plan_part', content: delta.content }));
+          for (const char of delta.content) {
+            ws.send(JSON.stringify({ type: 'plan_part', content: char }));
+          }
         }
       }
     }
@@ -268,7 +270,9 @@ Link: ${result.link}`;
           if (choices && choices.length > 0) {
             const delta = choices[0].delta;
             if (delta && delta.content) {
-              ws.send(JSON.stringify({ type: 'answer_part', content: delta.content }));
+              for (const char of delta.content) {
+                ws.send(JSON.stringify({ type: 'answer_part', content: char }));
+              }
             }
           }
         }
