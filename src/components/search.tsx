@@ -1,13 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, PlusCircle, X, ArrowRight } from 'lucide-react';
+import { Search, PlusCircle, X, ArrowRight, Mic, MicOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { FileUpload } from '../api/fileUpload';
 import { ModeToggle } from '../display-components/mode-toggle';
+
+// Import the WebSocket logic
+import { startTranscription, stopTranscription } from '../api/stream-transcribe';
 
 export default function DarkSearchEngine() {
   const [searchQuery, setSearchQuery] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false); // State to track transcription
+  const [transcript, setTranscript] = useState('');
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [fileText, setFileText] = useState('');
@@ -26,6 +31,19 @@ export default function DarkSearchEngine() {
   const handleRemoveFile = () => {
     setFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleTranscriptionToggle = () => {
+    if (isTranscribing) {
+      stopTranscription();
+    } else {
+      startTranscription((newTranscript) => {
+        console.log(newTranscript);
+        // Append the new transcript to the existing one
+        setTranscript((prevTranscript) => prevTranscript + ' ' + newTranscript);
+      });
+    }
+    setIsTranscribing(!isTranscribing);
   };
 
   const gridSuggestions = [
@@ -169,6 +187,17 @@ export default function DarkSearchEngine() {
               <span>Attach</span>
             </button>
           </div>
+        </div>
+
+        {/* Add the transcription button */}
+        <div className="flex justify-center mb-4">
+          <button
+            onClick={handleTranscriptionToggle}
+            className="p-2 rounded-full hover:bg-hover focus:bg-hover"
+            style={{ transition: 'background-color 0.3s' }}
+          >
+            {isTranscribing ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+          </button>
         </div>
       </div>
     </div>
