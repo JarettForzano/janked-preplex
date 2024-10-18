@@ -5,7 +5,7 @@ import InputForm from '../display-components/InputForm';
 
 export default function Display() {
   const { query } = useParams<{ query: string }>();
-  const [answers, setAnswers] = useState<{ type: 'plan' | 'answer'; content: string }[]>([]);
+  const [answers, setAnswers] = useState<{ type: 'assistant'; content: string }[]>([]);
   const [displayedQuery, setDisplayedQuery] = useState(query || '');
   const ws = useRef<WebSocket | null>(null);
 
@@ -31,32 +31,8 @@ export default function Display() {
 
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      if (data.type === 'plan_part') {
-        // Append plan content
-        setAnswers((prev) => {
-          const last = prev[prev.length - 1];
-          if (last && last.type === 'plan') {
-            return [
-              ...prev.slice(0, -1),
-              { type: 'plan', content: last.content + data.content },
-            ];
-          } else {
-            return [...prev, { type: 'plan', content: data.content }];
-          }
-        });
-      } else if (data.type === 'answer_part') {
-        // Append answer content
-        setAnswers((prev) => {
-          const last = prev[prev.length - 1];
-          if (last && last.type === 'answer') {
-            return [
-              ...prev.slice(0, -1),
-              { type: 'answer', content: last.content + data.content },
-            ];
-          } else {
-            return [...prev, { type: 'answer', content: data.content }];
-          }
-        });
+      if (data.type === 'assistant') {
+        setAnswers((prev) => [...prev, { type: 'assistant', content: data.content }]);
       } else if (data.type === 'end') {
         ws.current?.close();
       } else if (data.type === 'error') {
@@ -74,7 +50,6 @@ export default function Display() {
     };
   };
 
-  // Automatically start the search when the component mounts
   useEffect(() => {
     if (displayedQuery) {
       handleSearch(displayedQuery);
