@@ -9,13 +9,14 @@ export default function DarkSearchEngine() {
   const [file, setFile] = useState<File | null>(null)
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [fileText, setFileText] = useState('')
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0]
     if (selectedFile) {
       setFile(selectedFile)
       const response = await FileUpload(event)
-      console.log(response)
+      setFileText(response)
     }
   }
 
@@ -77,7 +78,9 @@ export default function DarkSearchEngine() {
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && searchQuery.trim()) {
-                navigate(`/search/${encodeURIComponent(searchQuery.trim())}`);
+                navigate(`/search/${encodeURIComponent(searchQuery.trim())}`, {
+                  state: { fileText },
+                });
               }
             }}
             className="w-full rounded-lg py-3 px-4 pr-12 border border-border focus:outline-none focus:ring-2 focus:ring-accent"

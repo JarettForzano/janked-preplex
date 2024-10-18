@@ -19,7 +19,7 @@ const wss = new WebSocketServer({ server });
 app.use(cors()); 
 
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'http://localhost:5173',
 }));
 
 wss.on('connection', (ws) => {
@@ -29,10 +29,11 @@ wss.on('connection', (ws) => {
     console.log(`Received message => ${message}`);
     const data = JSON.parse(message);
     const query = data.query;
+    const fileText = data.fileText;
 
     try {
       // Start the agent and stream the responses
-      await runResearchAssistant(query, ws);
+      await runResearchAssistant(query, ws, fileText);
     } catch (error) {
       ws.send(JSON.stringify({ type: 'error', content: error.message }));
       ws.close();

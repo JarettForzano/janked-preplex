@@ -88,6 +88,7 @@ You are a world-class research assistant with access to the following tools:
 - If not, consider using **scrapeWebsite** on the most promising URLs for more details.
 - **When providing the final answer, format it in Markdown. Include the sources as a list of clickable links.**
 - **Do not include any function names, function calls, or implementation details in your messages to the user.**
+- The user may ask you to analyze or answer a question and provide additonal context. Only research what is inside of the file they send if you need it, you may be able to answer the question just using what is inside of the file attached.
 
 Markdown Formatting:
 - Use bold text for important words or phrases. (**Strong**)
@@ -143,9 +144,11 @@ Apple has approximately **147,000** full-time employees as of 2023.
 `;
 
 const messages = [{ role: 'system', content: systemPrompt }];
-export default async function runResearchAssistant(query, ws) {
+export default async function runResearchAssistant(query, ws, fileText) {
   //const messages = [{ role: 'system', content: systemPrompt }];
-  messages.push({ role: 'user', content: query });
+  messages.push({ role: 'user', content: 
+    query + '\n\n' + 'USE THE INFORMATION BELOW AS CONTEXT WHEN ANSWERING THE QUERY IF IT EXISTS\n' + fileText  // quick and dirty way of doing it lol
+  });
 
   try {
     let assistantHasFinished = false;
