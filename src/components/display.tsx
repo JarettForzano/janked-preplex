@@ -1,51 +1,66 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import AnswerDisplay from '../display-components/AnswerDisplay';
-import StepsDisplay from '../display-components/StepsDisplay';
 import InputForm from '../display-components/InputForm';
 
 export default function Display() {
   const { query } = useParams<{ query: string }>();
-  const [answers, setAnswers] = useState<{ query: string | undefined; answer: string }[]>([]);
-  const [steps, setSteps] = useState<string[]>([]);
-  const [displayedQuery, setDisplayedQuery] = useState('');
+  const [answers, setAnswers] = useState<{ type: 'plan' | 'answer'; content: string }[]>([]);
+  const [displayedQuery, setDisplayedQuery] = useState(query || '');
   const ws = useRef<WebSocket | null>(null);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSteps([]);
-    setAnswers([]);
+  const handleSearch = (searchQuery: string) => {
+    if (!searchQuery) {
+      console.error('No query to send');
+      return;
+    }
 
-    // Close existing WebSocket if any
     if (ws.current) {
       ws.current.close();
     }
 
-    // Establish WebSocket connection
+    setAnswers([]);
+
     ws.current = new WebSocket('ws://localhost:4000');
 
     ws.current.onopen = () => {
       console.log('WebSocket connection opened');
-      // Send the query to the server
-      console.log('sending query:', query);
-      ws.current?.send(JSON.stringify({ query: displayedQuery }));
+      console.log('sending query:', searchQuery);
+      ws.current?.send(JSON.stringify({ query: searchQuery }));
     };
 
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log('Received data:', data);
-      if (data.type === 'assistant') {
-        // Append assistant's thought process to steps
-        setSteps((prev) => [...prev, data.content]);
-      } else if (data.type === 'answer') {
-        // Final answer
-        setAnswers((prev) => [...prev, { query: displayedQuery, answer: data.content }]);
+      if (data.type === 'plan_part') {
+        // Append plan content
+        setAnswers((prev) => {
+          const last = prev[prev.length - 1];
+          if (last && last.type === 'plan') {
+            return [
+              ...prev.slice(0, -1),
+              { type: 'plan', content: last.content + data.content },
+            ];
+          } else {
+            return [...prev, { type: 'plan', content: data.content }];
+          }
+        });
+      } else if (data.type === 'answer_part') {
+        // Append answer content
+        setAnswers((prev) => {
+          const last = prev[prev.length - 1];
+          if (last && last.type === 'answer') {
+            return [
+              ...prev.slice(0, -1),
+              { type: 'answer', content: last.content + data.content },
+            ];
+          } else {
+            return [...prev, { type: 'answer', content: data.content }];
+          }
+        });
       } else if (data.type === 'end') {
-        // The assistant has finished
         ws.current?.close();
       } else if (data.type === 'error') {
-        // Handle errors
-        setSteps((prev) => [...prev, `Error: ${data.content}`]);
+        console.error('Error from server:', data.content);
         ws.current?.close();
       }
     };
@@ -59,22 +74,24 @@ export default function Display() {
     };
   };
 
+  // Automatically start the search when the component mounts
   useEffect(() => {
-    // Clean up WebSocket when component unmounts
-    return () => {
-      if (ws.current) {
-        ws.current.close();
-      }
-    };
+    if (displayedQuery) {
+      handleSearch(displayedQuery);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="flex h-screen bg-gray-900 text-gray-100 p-6">
       <div className="flex-1 flex flex-col mr-6">
         <AnswerDisplay answers={answers} />
-        <InputForm query={displayedQuery} setQuery={setDisplayedQuery} onSubmit={handleSearch} />
+        <InputForm
+          query={displayedQuery}
+          setQuery={setDisplayedQuery}
+          onSubmit={() => handleSearch(displayedQuery)}
+        />
       </div>
-      <StepsDisplay steps={steps} />
     </div>
   );
 }
