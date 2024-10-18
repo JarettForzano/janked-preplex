@@ -11,6 +11,19 @@ export default function Display() {
   const [isLoading, setIsLoading] = useState(false)
   const ws = useRef<WebSocket | null>(null)
 
+  useEffect(() => {
+    if (query) {
+      handleSearch(query)
+    }
+    // Cleanup on unmount or query change
+    return () => {
+      if (ws.current) {
+        ws.current.close()
+        ws.current = null
+      }
+    }
+  }, [query])
+
   const handleSearch = (searchQuery: string) => {
     if (!searchQuery) {
       console.error('No query to send')
@@ -21,7 +34,6 @@ export default function Display() {
       ws.current.close()
     }
 
-    setAnswers([])
     setIsLoading(true)
 
     ws.current = new WebSocket('ws://localhost:4000')
@@ -30,18 +42,28 @@ export default function Display() {
       console.log('WebSocket connection opened')
       console.log('sending query:', searchQuery)
       ws.current?.send(JSON.stringify({ query: searchQuery }))
+      setAnswers((prev) => [
+        ...prev,
+        { type: 'assistant', content: `**Question:** ${searchQuery}` }
+      ])
     }
 
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data)
       if (data.type === 'assistant') {
-        setAnswers((prev) => [...prev, { type: 'assistant', content: data.content }])
+        // Include the new query in the answers for context
+        setAnswers((prev) => [
+          ...prev,
+          { type: 'assistant', content: data.content },
+        ])
       } else if (data.type === 'end') {
         ws.current?.close()
+        ws.current = null
         setIsLoading(false)
       } else if (data.type === 'error') {
         console.error('Error from server:', data.content)
         ws.current?.close()
+        ws.current = null
         setIsLoading(false)
       }
     }
@@ -57,12 +79,12 @@ export default function Display() {
     }
   }
 
-  useEffect(() => {
-    if (displayedQuery) {
-      handleSearch(displayedQuery)
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!displayedQuery.trim()) {
+      return
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }
 
   return (
     <div className="flex h-screen bg-gray-950 text-gray-200 p-6">
@@ -77,7 +99,7 @@ export default function Display() {
         <InputForm
           query={displayedQuery}
           setQuery={setDisplayedQuery}
-          onSubmit={() => handleSearch(displayedQuery)}
+          onSubmit={handleSubmit}
         />
       </div>
     </div>
